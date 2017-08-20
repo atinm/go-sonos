@@ -86,6 +86,31 @@ type upnpDevice_XML struct {
 	DeviceList           upnpDeviceList_XML  `xml:"deviceList"`
 }
 
+type Player struct {
+	DeviceType           string `xml:"deviceType"`
+	FriendlyName         string `xml:"friendlyName"`
+	Manufacturer         string `xml:"manufacturer"`
+	ManufacturerURL      string `xml:"manufacturerURL"`
+	ModelNumber          string `xml:"modelNumber"`
+	ModelDescription     string `xml:"modelDescription"`
+	ModelName            string `xml:"modelName"`
+	ModelURL             string `xml:"modelURL"`
+	SoftwareVersion      string `xml:"softwareVersion"`
+	HardwareVersion      string `xml:"hardwareVersion"`
+	SerialNum            string `xml:"serialNum"`
+	UDN                  string `xml:"UDN"`
+	MinCompatibleVersion string `xml:"minCompatibleVersion"`
+	DisplayVersion       string `xml:"displayVersion"`
+	ExtraVersion         string `xml:"extraVersion"`
+	RoomName             string `xml:"roomName"`
+	DisplayName          string `xml:"displayName"`
+	ZoneType             string `xml:"zoneType"`
+	Feature1             string `xml:"feature1"`
+	Feature2             string `xml:"feature2"`
+	Feature3             string `xml:"feature3"`
+	InternalSpeakerSize  string `xml:"internalSpeakerSize"`
+}
+
 type upnpIcon_XML struct {
 	Id       string `xml:"id"`
 	Mimetype string `xml:"mimetype"`
@@ -121,8 +146,13 @@ type upnpDescribeDevice_XML struct {
 	Device       []upnpDevice_XML      `xml:"device"`
 }
 
+type upnpDescribeDeviceJobResult struct {
+	svc_list []*Service
+	player   *Player
+}
+
 type upnpDescribeDeviceJob struct {
-	result     chan []*Service
+	result     chan upnpDescribeDeviceJobResult
 	err_result chan error
 	response   *http.Response
 	doc        upnpDescribeDevice_XML
@@ -131,7 +161,7 @@ type upnpDescribeDeviceJob struct {
 
 func upnpMakeDescribeDeviceJob(uri ssdp.Location) (job *upnpDescribeDeviceJob) {
 	job = &upnpDescribeDeviceJob{}
-	job.result = make(chan []*Service)
+	job.result = make(chan upnpDescribeDeviceJobResult)
 	job.err_result = make(chan error)
 	job.uri = uri
 	job.doc = upnpDescribeDevice_XML{}
@@ -153,8 +183,13 @@ func (this *upnpDescribeDeviceJob) BuildURL(servicePath ssdp.Location) (url *url
 	return
 }
 
+func upnpMakePlayer() (player *Player) {
+	return &Player{}
+}
+
 func (this *upnpDescribeDeviceJob) UnpackService(dev *upnpDevice_XML, svc_doc *upnpService_XML) (svc *Service) {
 	svc = upnpMakeService()
+
 	if m := upnpOtherDeviceRegex.FindStringSubmatch(dev.DeviceType); 0 < len(m) {
 		svc.deviceURI = m[1]
 		svc.deviceType = m[2]
@@ -194,9 +229,35 @@ func (this *upnpDescribeDeviceJob) UnpackDevice(dev *upnpDevice_XML) (svc_list [
 	return
 }
 
-func (this *upnpDescribeDeviceJob) Unpack() (svc_list []*Service) {
+func (this *upnpDescribeDeviceJob) Unpack() (result upnpDescribeDeviceJobResult) {
 	for _, dev := range this.doc.Device {
-		svc_list = append(svc_list, this.UnpackDevice(&dev)...)
+		result.svc_list = append(result.svc_list, this.UnpackDevice(&dev)...)
+		if result.player == nil {
+			player := upnpMakePlayer()
+			player.DeviceType = dev.DeviceType
+			player.DisplayName = dev.DisplayName
+			player.DisplayVersion = dev.DisplayVersion
+			player.ExtraVersion = dev.ExtraVersion
+			player.Feature1 = dev.Feature1
+			player.Feature2 = dev.Feature2
+			player.Feature3 = dev.Feature3
+			player.FriendlyName = dev.FriendlyName
+			player.HardwareVersion = dev.HardwareVersion
+			player.InternalSpeakerSize = dev.InternalSpeakerSize
+			player.Manufacturer = dev.Manufacturer
+			player.ManufacturerURL = dev.ManufacturerURL
+			player.MinCompatibleVersion = dev.MinCompatibleVersion
+			player.ModelDescription = dev.ModelDescription
+			player.ModelName = dev.ModelName
+			player.ModelNumber = dev.ModelNumber
+			player.ModelURL = dev.ModelURL
+			player.RoomName = dev.RoomName
+			player.SerialNum = dev.SerialNum
+			player.SoftwareVersion = dev.SoftwareVersion
+			player.UDN = dev.UDN
+			player.ZoneType = dev.ZoneType
+			result.player = player
+		}
 	}
 	return
 }
@@ -223,12 +284,14 @@ func (this *upnpDescribeDeviceJob) Describe() {
 
 type ServiceMap map[string][]*Service
 
-func Describe(uri ssdp.Location) (svc_map ServiceMap, err error) {
+func Describe(uri ssdp.Location) (svc_map ServiceMap, player *Player, err error) {
 	job := upnpMakeDescribeDeviceJob(uri)
 	go job.Describe()
 	timeout := time.NewTimer(time.Duration(3) * time.Second)
 	select {
-	case svc_list := <-job.result:
+	case result := <-job.result:
+		svc_list := result.svc_list
+		player = result.player
 		svc_map = make(ServiceMap)
 		for _, svc := range svc_list {
 			svc_map[svc.serviceType] = append(svc_map[svc.serviceType], svc)

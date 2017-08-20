@@ -31,10 +31,12 @@
 package main
 
 import (
+	"encoding/xml"
 	"log"
 	"net"
 
 	"github.com/atinm/go-sonos"
+	"github.com/atinm/go-sonos/didl"
 	"github.com/atinm/go-sonos/ssdp"
 	"github.com/atinm/go-sonos/upnp"
 )
@@ -90,15 +92,35 @@ func handleAVTransportEvents(reactor upnp.Reactor, c chan bool) {
 
 				log.Printf("[DEBUG] TransportState: %v", b.LastChange.InstanceID.TransportState.Val)
 				log.Printf("[DEBUG] CurrentTrackURI: %v", b.LastChange.InstanceID.CurrentTrackURI.Val)
+				log.Printf("[DEBUG] CurrentTrackMetadata: %s", b.LastChange.InstanceID.CurrentTrackMetaData.Val)
+				if b.LastChange.InstanceID.CurrentTrackMetaData.Val != "" {
+					var doc didl.Lite
+					var artist, title, album string
+					err := xml.Unmarshal([]byte(b.LastChange.InstanceID.CurrentTrackMetaData.Val), &doc)
+					if err != nil {
+						log.Panicf("Could not unmarshal %s: %v", b.LastChange.InstanceID.CurrentTrackMetaData.Val, err)
+					}
+					for _, item := range doc.Item {
+						artist = item.Creator[0].Value
+						album = item.Album[0].Value
+						title = item.Title[0].Value
+						log.Printf("[DEBUG] title: %s, artist: %s, album: %s", title, artist, album)
+						break
+					}
+				} else {
+					log.Printf("[DEBUG] CurrentTrackMetadata is empty: %s", b.LastChange.InstanceID.CurrentTrackMetaData.Val)
+				}
 				s := getTriggeredSonos(b.Svc)
 				if s != nil {
 					posInfo, err := s.GetPositionInfo(0)
 					if nil != err {
 						panic(err)
 					}
+					log.Printf("[DEBUG] Room Name: %s", s.Player.RoomName)
 					log.Printf("[DEBUG] Position.TrackURI: %s", posInfo.TrackURI)
 					log.Printf("[DEBUG] Position.TrackDuration: %s", posInfo.TrackDuration)
 					log.Printf("[DEBUG] Position.RelTime: %s", posInfo.RelTime)
+
 				}
 
 				//s.Next(0)

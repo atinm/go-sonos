@@ -31,11 +31,12 @@
 package sonos
 
 import (
+	_ "log"
+
 	"github.com/atinm/go-sonos/linn-co-uk"
 	"github.com/atinm/go-sonos/reciva-com"
 	"github.com/atinm/go-sonos/ssdp"
 	"github.com/atinm/go-sonos/upnp"
-	_ "log"
 )
 
 const RECIVA_RADIO = "reciva-com-RecivaRadio"
@@ -121,7 +122,7 @@ func ConnectAnyReciva(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (reciva
 	if dev_list, has := res[RECIVA_RADIO]; has {
 		for _, dev := range dev_list {
 			if RADIO == dev.Product() {
-				if svc_map, err := upnp.Describe(dev.Location()); nil != err {
+				if svc_map, _, err := upnp.Describe(dev.Location()); nil != err {
 					panic(err)
 				} else {
 					reciva = append(reciva, MakeReciva(svc_map, reactor, flags))
@@ -134,7 +135,7 @@ func ConnectAnyReciva(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (reciva
 }
 
 func ConnectReciva(dev ssdp.Device, reactor upnp.Reactor, flags int) (reciva *Reciva) {
-	if svc_map, err := upnp.Describe(dev.Location()); nil != err {
+	if svc_map, _, err := upnp.Describe(dev.Location()); nil != err {
 		panic(err)
 	} else {
 		reciva = MakeReciva(svc_map, reactor, flags)

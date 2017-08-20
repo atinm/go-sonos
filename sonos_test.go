@@ -1303,13 +1303,9 @@ func TestIssue_4(t *testing.T) {
 	if dev_list, has := res[sonos.MUSIC_SERVICES]; has {
 		for _, dev := range dev_list {
 			if sonos.SONOS == dev.Product() {
-				if _, err := upnp.Describe(dev.Location()); nil != err {
-					panic(err)
-				} else {
-					sonos.Connect(dev, reactor, sonos.SVC_ALL)
-					log.Printf("[DEBUG] Connect: Done")
-					break
-				}
+				sonos.Connect(dev, reactor, sonos.SVC_ALL)
+				log.Printf("[DEBUG] Connect: Done")
+				break
 			}
 		}
 	}

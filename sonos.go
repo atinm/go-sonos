@@ -44,6 +44,7 @@ const MUSIC_SERVICES = "schemas-upnp-org-MusicServices"
 const SONOS = "Sonos"
 
 type Sonos struct {
+	*upnp.Player
 	upnp.AlarmClock
 	upnp.AVTransport
 	upnp.ConnectionManager
@@ -106,8 +107,9 @@ func sonosCheckServiceFlags(svc_type string, flags int) bool {
 	return false
 }
 
-func MakeSonos(svc_map upnp.ServiceMap, reactor upnp.Reactor, flags int) (sonos *Sonos) {
+func MakeSonos(svc_map upnp.ServiceMap, player *upnp.Player, reactor upnp.Reactor, flags int) (sonos *Sonos) {
 	sonos = &Sonos{}
+	sonos.Player = player
 	for svc_type, svc_list := range svc_map {
 		if !sonosCheckServiceFlags(svc_type, flags) {
 			continue
@@ -240,10 +242,10 @@ func ConnectAny(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (sonos *Sonos
 }
 
 func Connect(dev ssdp.Device, reactor upnp.Reactor, flags int) (sonos *Sonos) {
-	if svc_map, err := upnp.Describe(dev.Location()); nil != err {
+	if svc_map, player, err := upnp.Describe(dev.Location()); nil != err {
 		panic(err)
 	} else {
-		sonos = MakeSonos(svc_map, reactor, flags)
+		sonos = MakeSonos(svc_map, player, reactor, flags)
 	}
 	return
 }
