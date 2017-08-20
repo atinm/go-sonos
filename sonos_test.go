@@ -46,7 +46,7 @@ import (
 
 const (
 	TEST_CONFIG        = "~/.go-sonos"
-	TEST_SONOS         = "kitchen"
+	TEST_SONOS         = "basement"
 	TEST_RECIVA        = "basement"
 	TEST_DISCOVER_PORT = "13104"
 	TEST_EVENTING_PORT = "13106"
@@ -754,12 +754,24 @@ func TestAddTrack(t *testing.T) {
 
 	if "" != lastTrackURI {
 		req := upnp.AddURIToQueueIn{
-			EnqueuedURI: lastTrackURI,
+			EnqueuedURI:                     lastTrackURI,
+			DesiredFirstTrackNumberEnqueued: 2,
 		}
-		if result, err := s.AddURIToQueue(0 /*instanceId*/, &req); nil != err {
+
+		if _, err := s.AddURIToQueue(0 /*instanceId*/, &req); nil != err {
 			t.Fatal(err)
 		} else {
-			t.Logf("%#v", result)
+			t.Logf("Added %s", lastTrackURI)
+			t.Logf("New Queue")
+			t.Logf("-------------------")
+			if result, err := s.GetQueueContents(); nil != err {
+				t.Fatal(err)
+			} else {
+				for _, item := range result {
+					t.Logf("%#v", item)
+					lastTrackURI = item.Res()
+				}
+			}
 		}
 	}
 }
