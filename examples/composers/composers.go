@@ -30,8 +30,8 @@
 package main
 
 import (
-	"github.com/ianr0bkny/go-sonos"
-	"github.com/ianr0bkny/go-sonos/ssdp"
+	"github.com/atinm/go-sonos"
+	"github.com/atinm/go-sonos/ssdp"
 	"log"
 )
 

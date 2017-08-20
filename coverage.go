@@ -32,7 +32,7 @@ package sonos
 
 import (
 	"fmt"
-	"github.com/ianr0bkny/go-sonos/upnp"
+	"github.com/atinm/go-sonos/upnp"
 	"log"
 	"reflect"
 )
@@ -54,10 +54,10 @@ func (this *coverageData) add(other *coverageData) {
 }
 
 func (this *coverageData) log(name string, missing bool) {
-	log.Printf("%20s %8.2f%% %3d/%-3d", name, this.pct(), this.implemented, this.total)
+	log.Printf("[DEBUG] %20s %8.2f%% %3d/%-3d", name, this.pct(), this.implemented, this.total)
 	if missing {
 		for _, action := range this.missing {
-			log.Printf("%20s * %s", "", action)
+			log.Printf("[DEBUG] %20s * %s", "", action)
 		}
 	}
 }

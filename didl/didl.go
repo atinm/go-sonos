@@ -46,7 +46,7 @@ type didlValidated struct {
 func (this *didlValidated) Validate() {
 	if 0 < len(this.Extra) {
 		for _, extra := range this.Extra {
-			log.Printf("Missing <Container><%s/>", extra.Local)
+			log.Printf("[DEBUG] Missing <Container><%s/>", extra.Local)
 		}
 	}
 }

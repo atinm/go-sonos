@@ -32,7 +32,7 @@ package upnp
 
 import (
 	"encoding/xml"
-	"github.com/ianr0bkny/go-sonos/didl"
+	"github.com/atinm/go-sonos/didl"
 	_ "log"
 )
 
@@ -222,7 +222,7 @@ func (this *ContentDirectory) Browse(req *BrowseRequest) (browseResult *BrowseRe
 	doc := Response{}
 	xml.Unmarshal([]byte(response), &doc)
 	doc.Doc = &didl.Lite{}
-	// log.Printf("%s", doc.Result)
+	// log.Printf("[DEBUG] %s", doc.Result)
 	xml.Unmarshal([]byte(doc.Result), doc.Doc)
 	browseResult = &doc.BrowseResult
 	err = doc.Error()

@@ -55,11 +55,12 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/ianr0bkny/go-sonos/ssdp"
 	"io"
 	"log"
 	"os"
 	"path"
+
+	"github.com/atinm/go-sonos/ssdp"
 )
 
 //
@@ -150,18 +151,18 @@ func (this *Config) Init() {
 	var err error
 	if this.dir, err = os.Open(this.dirname); nil != err {
 		if err = os.Mkdir(this.dirname, 0755); nil != err {
-			log.Printf("Config: %s", err.(*os.PathError).Error())
+			log.Printf("[DEBUG] Config: %s", err.(*os.PathError).Error())
 			return
 		} else if this.dir, err = os.Open(this.dirname); nil != err {
-			log.Printf("Config: %s", err.(*os.PathError).Error())
+			log.Printf("[DEBUG] Config: %s", err.(*os.PathError).Error())
 			return
 		}
 	}
 	if fi, err := this.dir.Stat(); nil != err {
-		log.Printf("Config: %s", err.(*os.PathError).Error())
+		log.Printf("[DEBUG] Config: %s", err.(*os.PathError).Error())
 		return
 	} else if !fi.IsDir() {
-		log.Printf("Config: %s: Not a directory", this.dirname)
+		log.Printf("[DEBUG] Config: %s: Not a directory", this.dirname)
 		return
 	}
 	this.loadFromDisk()
@@ -259,7 +260,7 @@ func (this *Config) maybeLoadFile(f os.FileInfo) {
 
 func (this *Config) maybeLoadBookmarks(f os.FileInfo) {
 	if f.IsDir() {
-		log.Printf("%s/%s: Expected regular file", this.dirname, f.Name())
+		log.Printf("[DEBUG] %s/%s: Expected regular file", this.dirname, f.Name())
 		return
 	} else {
 		path := path.Join(this.dirname, f.Name())

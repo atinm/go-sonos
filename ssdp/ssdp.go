@@ -529,7 +529,7 @@ func (this *ssdpDefaultManager) ssdpHandleNotify(raw *ssdpRawMessage) *ssdpNotif
 		case "01-Nls":
 			msg._01_nls = value
 		default:
-			log.Printf("No support for field `%s' (value `%s')", key, value)
+			log.Printf("[DEBUG] No support for field `%s' (value `%s')", key, value)
 		}
 	}
 	return msg
@@ -552,7 +552,7 @@ func (this *ssdpDefaultManager) ssdpHandleResponse(raw *ssdpRawMessage) *ssdpRes
 				msg.product = m[6]
 				msg.productVersion = m[8]
 			} else {
-				log.Printf("Invalid server description `%s'", value)
+				//log.Printf("[DEBUG] Invalid server description `%s'", value)
 			}
 		case "Opt":
 			msg.opt = value
@@ -583,8 +583,8 @@ func (this *ssdpDefaultManager) ssdpHandleResponse(raw *ssdpRawMessage) *ssdpRes
 		case "X-Av-Server-Info":
 			msg.x_av_server_info = value
 		default:
-			log.Printf("No support for field `%s' (value `%s')", key, value)
-			log.Printf("%v", raw)
+			//log.Printf("[DEBUG] No support for field `%s' (value `%s')", key, value)
+			//log.Printf("[DEBUG] %v", raw)
 		}
 	}
 	return msg
@@ -628,7 +628,7 @@ func (this *ssdpDefaultManager) ssdpUnicastDiscoverImpl(ifi *net.Interface, port
 	for _, addr := range addrs {
 		if nil != addr.(*net.IPNet).IP.DefaultMask() {
 			lip = addr.(*net.IPNet).IP
-			break;
+			break
 		}
 	}
 	laddr, err := net.ResolveUDPAddr(ssdpBroadcastVersion, net.JoinHostPort(lip.String(), port))
@@ -760,7 +760,7 @@ func (this *ssdpDefaultManager) ssdpIncludessdpRootDevice(ssdpsm *ssdpResponseMe
 		res.ssdptype = ssdpTypessdpRootDevice
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for upnp:rootdevice: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for upnp:rootdevice: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -774,11 +774,11 @@ func (this *ssdpDefaultManager) ssdpIncludeService(ssdpsm *ssdpResponseMessage) 
 		res.name = n[2]
 		var err error
 		if res.version, err = strconv.ParseInt(n[4], 10, 4); nil != err {
-			log.Printf("Error in parsing service version `%s'", n[4])
+			log.Printf("[DEBUG] Error in parsing service version `%s'", n[4])
 		}
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for UPnP service: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for UPnP service: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -792,11 +792,11 @@ func (this *ssdpDefaultManager) ssdpIncludeDevice(ssdpsm *ssdpResponseMessage) {
 		res.name = n[2]
 		var err error
 		if res.version, err = strconv.ParseInt(n[4], 10, 4); nil != err {
-			log.Printf("Error in parsing device version `%s'", n[4])
+			log.Printf("[DEBUG] Error in parsing device version `%s'", n[4])
 		}
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for UPnP device: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for UPnP device: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -809,7 +809,7 @@ func (this *ssdpDefaultManager) ssdpIncludeUUID(ssdpsm *ssdpResponseMessage) {
 		res.ssdptype = ssdpTypeUUID
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -823,7 +823,7 @@ func (this *ssdpDefaultManager) ssdpIncludeHNAP(ssdpsm *ssdpResponseMessage, nam
 		res.name = name
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for HNAP: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for HNAP: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -838,11 +838,11 @@ func (this *ssdpDefaultManager) ssdpIncludeOtherService(ssdpsm *ssdpResponseMess
 		res.name = n[3]
 		var err error
 		if res.version, err = strconv.ParseInt(n[5], 10, 4); nil != err {
-			log.Printf("Error in parsing service version `%s'", n[4])
+			log.Printf("[DEBUG] Error in parsing service version `%s'", n[4])
 		}
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for third-party service: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for third-party service: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -857,11 +857,11 @@ func (this *ssdpDefaultManager) ssdpIncludeOtherDevice(ssdpsm *ssdpResponseMessa
 		res.name = n[3]
 		var err error
 		if res.version, err = strconv.ParseInt(n[5], 10, 4); nil != err {
-			log.Printf("Error in parsing device version `%s'", n[4])
+			log.Printf("[DEBUG] Error in parsing device version `%s'", n[4])
 		}
 		this.ssdpNotifyResource(res)
 	} else {
-		log.Printf("Invalid Unique Service Name for third-party device: `%s'", ssdpsm.usn)
+		log.Printf("[DEBUG] Invalid Unique Service Name for third-party device: `%s'", ssdpsm.usn)
 	}
 }
 
@@ -881,7 +881,7 @@ func (this *ssdpDefaultManager) ssdpIncludeResponse(msg *ssdpResponseMessage) {
 	} else if m := ssdpOtherDeviceRegex.FindStringSubmatch(msg.st); 0 < len(m) {
 		this.ssdpIncludeOtherDevice(msg)
 	} else {
-		log.Printf("Unsupported search term [ST] `%s'", msg.st)
+		log.Printf("[DEBUG] Unsupported search term [ST] `%s'", msg.st)
 	}
 }
 

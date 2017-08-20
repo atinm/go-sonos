@@ -57,7 +57,7 @@ type EventFactory interface {
 }
 
 type Reactor interface {
-	Init(ifiname, port string)
+	Init(port string)
 	Subscribe(svc *Service, factory EventFactory) error
 	Channel() chan Event
 }
@@ -106,7 +106,7 @@ type Event interface {
 }
 
 type upnpDefaultReactor struct {
-	ifiname     string
+	ip          net.IP
 	port        string
 	initialized bool
 	server      *http.Server
@@ -121,24 +121,32 @@ func (this *upnpDefaultReactor) serve() {
 	log.Fatal(this.server.ListenAndServe())
 }
 
-func (this *upnpDefaultReactor) Init(ifiname, port string) {
+// GetLocalIP returns the non loopback local IPv4 addr of the host
+func getLocalIP() net.IP {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil
+	}
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP
+			}
+		}
+	}
+	return nil
+}
+
+func (this *upnpDefaultReactor) Init(port string) {
 	if this.initialized {
 		panic("Attempt to reinitialize reactor")
 	}
 
-	ifi, err := net.InterfaceByName(ifiname)
-	if err != nil {
-		panic(err)
-	}
-	addrs, err := ifi.Addrs()
-	if err != nil {
-		panic(err)
-	}
-
 	this.initialized = true
 	this.port = port
-	this.ifiname = ifiname
-	this.localAddr = net.JoinHostPort(addrs[0].(*net.IPNet).IP.String(), port)
+	this.ip = getLocalIP()
+	this.localAddr = net.JoinHostPort(this.ip.String(), port)
 	this.server = &http.Server{
 		Addr:           ":" + port,
 		Handler:        nil,
@@ -147,7 +155,7 @@ func (this *upnpDefaultReactor) Init(ifiname, port string) {
 		MaxHeaderBytes: 1 << 20,
 	}
 	http.Handle("/eventSub", this)
-	log.Printf("Listening for events on %s", this.localAddr)
+	log.Printf("[DEBUG] Listening for events on %s", this.localAddr)
 	go this.run()
 	go this.serve()
 }

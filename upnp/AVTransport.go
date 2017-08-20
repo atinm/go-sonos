@@ -46,7 +46,7 @@ type avTransport_Value_XML struct {
 }
 
 type avTransport_InstanceID_XML struct {
-	avTransport_Value_XML
+	//avTransport_Value_XML
 	TransportState,
 	CurrentPlayMode,
 	CurrentCrossfadeMode,
@@ -78,7 +78,7 @@ type avTransport_InstanceID_XML struct {
 	CurrentRecordQualityMode,
 	PossibleRecordQualityModes,
 	NextAVTransportURI,
-	NextAVTransportURIMetaData/*unpack*/ avTransport_Value_XML
+	NextAVTransportURIMetaData /*unpack*/ avTransport_Value_XML
 }
 
 type avTransport_Event_XML struct {

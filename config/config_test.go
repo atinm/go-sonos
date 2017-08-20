@@ -31,11 +31,13 @@
 package config_test
 
 import (
-	"github.com/ianr0bkny/go-sonos"
-	"github.com/ianr0bkny/go-sonos/config"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/atinm/go-sonos/config"
+
+	sonos "github.com/atinm/go-sonos"
 )
 
 const (

@@ -274,7 +274,7 @@ func (this *upnpDescribeServiceJob) Parse() {
 func (this *upnpDescribeServiceJob) Describe() {
 	var err error
 	uri := this.svc.scpdURL.String()
-	log.Printf("Loading %s", string(uri))
+	log.Printf("[DEBUG] Loading %s", string(uri))
 	if this.response, err = http.Get(string(uri)); nil == err {
 		this.Parse()
 	} else {

@@ -39,10 +39,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ianr0bkny/go-sonos"
-	"github.com/ianr0bkny/go-sonos/config"
-	"github.com/ianr0bkny/go-sonos/model"
-	"github.com/ianr0bkny/go-sonos/upnp"
+	"github.com/atinm/go-sonos"
+	"github.com/atinm/go-sonos/config"
+	"github.com/atinm/go-sonos/model"
+	"github.com/atinm/go-sonos/upnp"
 	"log"
 	"net/http"
 	"os"
@@ -399,6 +399,6 @@ func main() {
 		setupHttp(s)
 	}
 
-	log.Printf("Starting server loop ...")
+	log.Printf("[DEBUG] Starting server loop ...")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", CSWEB_HTTP_PORT), nil))
 }

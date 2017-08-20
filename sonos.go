@@ -34,9 +34,10 @@
 package sonos
 
 import (
-	"github.com/ianr0bkny/go-sonos/ssdp"
-	"github.com/ianr0bkny/go-sonos/upnp"
 	_ "log"
+
+	"github.com/atinm/go-sonos/ssdp"
+	"github.com/atinm/go-sonos/upnp"
 )
 
 const MUSIC_SERVICES = "schemas-upnp-org-MusicServices"
@@ -207,7 +208,7 @@ func MakeSonos(svc_map upnp.ServiceMap, reactor upnp.Reactor, flags int) (sonos 
 	return
 }
 
-func ConnectAny(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (sonos []*Sonos) {
+func ConnectAll(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (sonos []*Sonos) {
 	qry := ssdp.ServiceQueryTerms{
 		ssdp.ServiceKey(MUSIC_SERVICES): -1,
 	}
@@ -215,11 +216,22 @@ func ConnectAny(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (sonos []*Son
 	if dev_list, has := res[MUSIC_SERVICES]; has {
 		for _, dev := range dev_list {
 			if SONOS == dev.Product() {
-				if svc_map, err := upnp.Describe(dev.Location()); nil != err {
-					panic(err)
-				} else {
-					sonos = append(sonos, MakeSonos(svc_map, reactor, flags))
-				}
+				sonos = append(sonos, Connect(dev, reactor, flags))
+			}
+		}
+	}
+	return
+}
+
+func ConnectAny(mgr ssdp.Manager, reactor upnp.Reactor, flags int) (sonos *Sonos) {
+	qry := ssdp.ServiceQueryTerms{
+		ssdp.ServiceKey(MUSIC_SERVICES): -1,
+	}
+	res := mgr.QueryServices(qry)
+	if dev_list, has := res[MUSIC_SERVICES]; has {
+		for _, dev := range dev_list {
+			if SONOS == dev.Product() {
+				sonos = Connect(dev, reactor, flags)
 				break
 			}
 		}
@@ -236,9 +248,9 @@ func Connect(dev ssdp.Device, reactor upnp.Reactor, flags int) (sonos *Sonos) {
 	return
 }
 
-func MakeReactor(ifiname, port string) upnp.Reactor {
+func MakeReactor(port string) upnp.Reactor {
 	reactor := upnp.MakeReactor()
-	reactor.Init(ifiname, port)
+	reactor.Init(port)
 	return reactor
 }
 

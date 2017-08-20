@@ -46,7 +46,7 @@ type renderingControl_Value_XML struct {
 }
 
 type renderingControl_InstanceID_XML struct {
-	renderingControl_Value_XML
+	//renderingControl_Value_XML
 	Volume,
 	Mute,
 	Bass,
@@ -637,15 +637,15 @@ func (this *RenderingControl) SetSonarCalibrationX(instanceId uint32, calibratio
 
 func (this *RenderingControl) GetSonarStatus(instanceId uint32) (sonarEnabled, sonarCalibrationAvailable bool, err error) {
 	type Response struct {
-		XMLName xml.Name
-		SonarEnabled bool
+		XMLName                   xml.Name
+		SonarEnabled              bool
 		SonarCalibrationAvailable bool
 		ErrorResponse
 	}
 	args := []Arg{
 		{"InstanceID", instanceId},
 	}
-	response:= this.Svc.Call("GetSonarStatus", args)
+	response := this.Svc.Call("GetSonarStatus", args)
 	doc := Response{}
 	xml.Unmarshal([]byte(response), &doc)
 	sonarEnabled = doc.SonarEnabled
@@ -663,7 +663,7 @@ func (this *RenderingControl) SetSonarStatus(instanceId uint32, sonarEnabled boo
 		{"InstanceID", instanceId},
 		{"SonarEnabled", sonarEnabled},
 	}
-	response:= this.Svc.Call("SetSonarStatus", args)
+	response := this.Svc.Call("SetSonarStatus", args)
 	doc := Response{}
 	xml.Unmarshal([]byte(response), &doc)
 	return doc.Error()

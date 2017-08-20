@@ -31,10 +31,10 @@
 package sonos
 
 import (
-	"github.com/ianr0bkny/go-sonos/linn-co-uk"
-	"github.com/ianr0bkny/go-sonos/reciva-com"
-	"github.com/ianr0bkny/go-sonos/ssdp"
-	"github.com/ianr0bkny/go-sonos/upnp"
+	"github.com/atinm/go-sonos/linn-co-uk"
+	"github.com/atinm/go-sonos/reciva-com"
+	"github.com/atinm/go-sonos/ssdp"
+	"github.com/atinm/go-sonos/upnp"
 	_ "log"
 )
 

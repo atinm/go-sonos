@@ -39,9 +39,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/ianr0bkny/go-sonos"
-	"github.com/ianr0bkny/go-sonos/config"
-	"github.com/ianr0bkny/go-sonos/ssdp"
+	"github.com/atinm/go-sonos"
+	"github.com/atinm/go-sonos/config"
+	"github.com/atinm/go-sonos/ssdp"
 	"log"
 	"os"
 	"path"
@@ -141,7 +141,7 @@ func queue(flags *Args, args []string) (err error) {
 			log.Fatalf("GetQueueContents: %#v", err)
 		} else {
 			for _, track := range q {
-				log.Printf("%s\n", track.Title())
+				log.Printf("[DEBUG] %s\n", track.Title())
 			}
 		}
 	} else {

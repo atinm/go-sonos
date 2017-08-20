@@ -34,7 +34,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/ianr0bkny/go-sonos/ssdp"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -42,6 +41,8 @@ import (
 	"path"
 	"regexp"
 	"time"
+
+	"github.com/atinm/go-sonos/ssdp"
 )
 
 var upnpOtherDeviceRegex *regexp.Regexp
@@ -212,7 +213,7 @@ func (this *upnpDescribeDeviceJob) Parse() {
 
 func (this *upnpDescribeDeviceJob) Describe() {
 	var err error
-	log.Printf("Loading %s", string(this.uri))
+	log.Printf("[DEBUG] Loading %s", string(this.uri))
 	if this.response, err = http.Get(string(this.uri)); nil == err {
 		this.Parse()
 	} else {

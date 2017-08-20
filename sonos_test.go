@@ -31,30 +31,33 @@
 package sonos_test
 
 import (
-	"github.com/ianr0bkny/go-sonos"
-	"github.com/ianr0bkny/go-sonos/config"
-	"github.com/ianr0bkny/go-sonos/didl"
-	"github.com/ianr0bkny/go-sonos/ssdp"
-	"github.com/ianr0bkny/go-sonos/upnp"
 	"log"
+	"net"
 	"strings"
 	"testing"
+
+	"github.com/atinm/go-sonos"
+	"github.com/atinm/go-sonos/config"
+	"github.com/atinm/go-sonos/didl"
+	"github.com/atinm/go-sonos/ssdp"
+	"github.com/atinm/go-sonos/upnp"
+	"github.com/mitchellh/go-homedir"
 )
 
 const (
-	TEST_CONFIG        = "/home/ianr/.go-sonos"
+	TEST_CONFIG        = "~/.go-sonos"
 	TEST_SONOS         = "kitchen"
 	TEST_RECIVA        = "basement"
 	TEST_DISCOVER_PORT = "13104"
 	TEST_EVENTING_PORT = "13106"
-	TEST_NETWORK       = "eth0"
 )
 
 var testSonos *sonos.Sonos
 
 func initTestSonos(flags int) {
 	log.SetFlags(log.Ltime | log.Lshortfile)
-	c := config.MakeConfig(TEST_CONFIG)
+	home, _ := homedir.Expand(TEST_CONFIG)
+	c := config.MakeConfig(home)
 	c.Init()
 	if dev := c.Lookup(TEST_SONOS); nil != dev {
 		testSonos = sonos.Connect(dev, nil, flags)
@@ -74,7 +77,8 @@ var testReciva *sonos.Reciva
 
 func initTestReciva(flags int) {
 	log.SetFlags(log.Ltime | log.Lshortfile)
-	c := config.MakeConfig(TEST_CONFIG)
+	home, _ := homedir.Expand(TEST_CONFIG)
+	c := config.MakeConfig(home)
 	c.Init()
 	if dev := c.Lookup(TEST_RECIVA); nil != dev {
 		testReciva = sonos.ConnectReciva(dev, nil, flags)
@@ -522,20 +526,42 @@ func TestCoverage(t *testing.T) {
 	sonos.Coverage(s)
 }
 
+// GetLocalInterfaceName returns the first interface name that has the non loopback local IPv4 addr of the host
+func getLocalInterfaceName() string {
+	list, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, iface := range list {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			panic(err)
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					return iface.Name
+				}
+			}
+		}
+	}
+	return ""
+}
+
 //
 // Discovery
 //
-func _TestDiscovery(t *testing.T) {
-	if mgr, err := sonos.Discover(TEST_NETWORK, TEST_DISCOVER_PORT); nil != err {
+func TestDiscovery(t *testing.T) {
+
+	if mgr, err := sonos.Discover(getLocalInterfaceName(), TEST_DISCOVER_PORT); nil != err {
 		panic(err)
 	} else {
-		reactor := sonos.MakeReactor(TEST_NETWORK, TEST_EVENTING_PORT)
-		found := sonos.ConnectAny(mgr, reactor, sonos.SVC_DEVICE_PROPERTIES)
-		for _, s := range found {
-			id, _ := s.GetHouseholdID()
-			name, _, _ := s.GetZoneAttributes()
-			t.Logf("Found device \"%s\",\"%s\"", id, name)
-		}
+		reactor := sonos.MakeReactor(TEST_EVENTING_PORT)
+		s := sonos.ConnectAny(mgr, reactor, sonos.SVC_DEVICE_PROPERTIES)
+		id, _ := s.GetHouseholdID()
+		name, _, _ := s.GetZoneAttributes()
+		t.Logf("Found device \"%s\",\"%s\"", id, name)
 	}
 }
 
@@ -1048,36 +1074,53 @@ func handleEvent_TestEvent(reactor upnp.Reactor, c chan bool) {
 			switch evt.Type() {
 			case upnp.AlarmClock_EventType:
 				b := evt.(upnp.AlarmClockEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.AVTransport_EventType:
 				b := evt.(upnp.AVTransportEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.ConnectionManager_EventType:
 				b := evt.(upnp.ConnectionManagerEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.ContentDirectory_EventType:
 				b := evt.(upnp.ContentDirectoryEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.DeviceProperties_EventType:
 				b := evt.(upnp.DevicePropertiesEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.GroupManagement_EventType:
 				b := evt.(upnp.GroupManagementEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.MusicServices_EventType:
 				b := evt.(upnp.MusicServicesEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.RenderingControl_EventType:
 				b := evt.(upnp.RenderingControlEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.SystemProperties_EventType:
 				b := evt.(upnp.SystemPropertiesEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			case upnp.ZoneGroupTopology_EventType:
 				b := evt.(upnp.ZoneGroupTopologyEvent)
-				log.Printf("%#v", b)
+				log.Printf("[DEBUG] %#v", b)
 			}
 		}
+	}
+}
+
+func TestEvent(t *testing.T) {
+	// Startup and listen to events
+	log.SetFlags(log.Ltime | log.Lshortfile)
+	home, _ := homedir.Expand(TEST_CONFIG)
+	c := config.MakeConfig(home)
+	c.Init()
+	if dev := c.Lookup(TEST_SONOS); nil != dev {
+		exit_chan := make(chan bool)
+		reactor := sonos.MakeReactor(TEST_EVENTING_PORT)
+		go handleEvent_TestEventBrief(reactor, exit_chan)
+		testSonos = sonos.Connect(dev, reactor, sonos.SVC_ALL)
+		<-exit_chan
+	} else {
+		log.Fatal("Could not create test instance")
 	}
 }
 
@@ -1087,38 +1130,39 @@ func handleEvent_TestEventBrief(reactor upnp.Reactor, c chan bool) {
 		case evt := <-reactor.Channel():
 			switch evt.Type() {
 			case upnp.AlarmClock_EventType:
-				log.Printf("ALARM_CLOCK")
+				log.Printf("[DEBUG] ALARM_CLOCK")
 			case upnp.AVTransport_EventType:
-				log.Printf("AV_TRANSPORT")
+				log.Printf("[DEBUG] AV_TRANSPORT")
 			case upnp.ConnectionManager_EventType:
-				log.Printf("CONNECTION_MANAGER")
+				log.Printf("[DEBUG] CONNECTION_MANAGER")
 			case upnp.ContentDirectory_EventType:
-				log.Printf("CONTENT_DIRECTORY")
+				log.Printf("[DEBUG] CONTENT_DIRECTORY")
 			case upnp.DeviceProperties_EventType:
-				log.Printf("DEVICE_PROPERTIES")
+				log.Printf("[DEBUG] DEVICE_PROPERTIES")
 			case upnp.GroupManagement_EventType:
-				log.Printf("GROUP_MANAGEMENT")
+				log.Printf("[DEBUG] GROUP_MANAGEMENT")
 			case upnp.MusicServices_EventType:
-				log.Printf("MUSIC_SERVICES")
+				log.Printf("[DEBUG] MUSIC_SERVICES")
 			case upnp.RenderingControl_EventType:
-				log.Printf("RENDERING_CONTROL")
+				log.Printf("[DEBUG] RENDERING_CONTROL")
 			case upnp.SystemProperties_EventType:
-				log.Printf("SYSTEM_PROPERTIES")
+				log.Printf("[DEBUG] SYSTEM_PROPERTIES")
 			case upnp.ZoneGroupTopology_EventType:
-				log.Printf("ZONE_GROUP_TOPOLOGY")
+				log.Printf("[DEBUG] ZONE_GROUP_TOPOLOGY")
 			}
 		}
 	}
 }
 
-func TestEvent(t *testing.T) {
+func TestEventBrief(t *testing.T) {
 	// Startup and listen to events
 	log.SetFlags(log.Ltime | log.Lshortfile)
-	c := config.MakeConfig(TEST_CONFIG)
+	home, _ := homedir.Expand(TEST_CONFIG)
+	c := config.MakeConfig(home)
 	c.Init()
 	if dev := c.Lookup(TEST_SONOS); nil != dev {
 		exit_chan := make(chan bool)
-		reactor := sonos.MakeReactor(TEST_NETWORK, TEST_EVENTING_PORT)
+		reactor := sonos.MakeReactor(TEST_EVENTING_PORT)
 		go handleEvent_TestEventBrief(reactor, exit_chan)
 		testSonos = sonos.Connect(dev, reactor, sonos.SVC_ALL)
 		<-exit_chan
@@ -1132,7 +1176,7 @@ func TestGetZoneGroupState(t *testing.T) {
 	if state, err := s.GetZoneGroupState(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("%#v", state)
+		log.Printf("[DEBUG] %#v", state)
 	}
 }
 
@@ -1146,7 +1190,7 @@ func TestListPresets(t *testing.T) {
 	if presets, err := r.ListPresets(0); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("PRESET: %v", presets)
+		log.Printf("[DEBUG] PRESET: %v", presets)
 	}
 }
 
@@ -1155,7 +1199,7 @@ func TestIdArray(t *testing.T) {
 	if token, array, err := r.IdArray(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("--> %v %v", token, array)
+		log.Printf("[DEBUG] --> %v %v", token, array)
 	}
 }
 
@@ -1164,7 +1208,7 @@ func TestTracksMax(t *testing.T) {
 	if tracksMax, err := r.TracksMax(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("%v", tracksMax)
+		log.Printf("[DEBUG] %v", tracksMax)
 	}
 }
 
@@ -1173,12 +1217,12 @@ func TestPowerState(t *testing.T) {
 	if state, err := r.GetPowerState(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Power state is (%v)", state)
+		log.Printf("[DEBUG] Power state is (%v)", state)
 	}
 	if state, err := r.SetPowerState("Off"); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Power state is (%v)", state)
+		log.Printf("[DEBUG] Power state is (%v)", state)
 	}
 }
 
@@ -1187,8 +1231,8 @@ func TestDisplayLanguage(t *testing.T) {
 	if lang, iso, err := r.GetCurrentDisplayLanguage(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Language = %v", lang)
-		log.Printf("ISO: %v", iso)
+		log.Printf("[DEBUG] Language = %v", lang)
+		log.Printf("[DEBUG] ISO: %v", iso)
 	}
 }
 
@@ -1197,8 +1241,8 @@ func TestDisplayLanguageList(t *testing.T) {
 	if lang, iso, err := r.GetDisplayLanguages(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Language = %v", lang)
-		log.Printf("ISO: %v", iso)
+		log.Printf("[DEBUG] Language = %v", lang)
+		log.Printf("[DEBUG] ISO: %v", iso)
 	}
 }
 
@@ -1207,7 +1251,7 @@ func TestGetNumberOfPresets(t *testing.T) {
 	if n, err := r.GetNumberOfPresets(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Number of presets: %v", n)
+		log.Printf("[DEBUG] Number of presets: %v", n)
 	}
 }
 
@@ -1216,7 +1260,7 @@ func TestRecivaGetDateTime(t *testing.T) {
 	if n, err := r.GetDateTime(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Date-time: %v", n)
+		log.Printf("[DEBUG] Date-time: %v", n)
 	}
 }
 
@@ -1225,7 +1269,7 @@ func TestRecivaGetTimeZone(t *testing.T) {
 	if n, err := r.GetTimeZone(); nil != err {
 		log.Fatal(err)
 	} else {
-		log.Printf("Timezone: %v", n)
+		log.Printf("[DEBUG] Timezone: %v", n)
 	}
 }
 
@@ -1242,20 +1286,20 @@ func read_events(c chan upnp.Event) {
 
 func TestIssue_4(t *testing.T) {
 	log.SetFlags(log.Ltime | log.Lshortfile)
-	log.Printf("Discovery: Starting")
+	log.Printf("[DEBUG] Discovery: Starting")
 	mgr, err := sonos.Discover("eth0", "13104")
 	if nil != err {
 		panic(err)
 	}
-	log.Printf("Discovery: Done; Reactor: Starting")
-	reactor := sonos.MakeReactor("eth0", "13106")
+	log.Printf("[DEBUG] Discovery: Done; Reactor: Starting")
+	reactor := sonos.MakeReactor("13106")
 	go read_events(reactor.Channel()) ///// <------------
-	log.Printf("Reactor: Running; Query: Starting")
+	log.Printf("[DEBUG] Reactor: Running; Query: Starting")
 	qry := ssdp.ServiceQueryTerms{
 		ssdp.ServiceKey(sonos.MUSIC_SERVICES): -1,
 	}
 	res := mgr.QueryServices(qry)
-	log.Printf("Query: Done; Connect: Starting")
+	log.Printf("[DEBUG] Query: Done; Connect: Starting")
 	if dev_list, has := res[sonos.MUSIC_SERVICES]; has {
 		for _, dev := range dev_list {
 			if sonos.SONOS == dev.Product() {
@@ -1263,7 +1307,7 @@ func TestIssue_4(t *testing.T) {
 					panic(err)
 				} else {
 					sonos.Connect(dev, reactor, sonos.SVC_ALL)
-					log.Printf("Connect: Done")
+					log.Printf("[DEBUG] Connect: Done")
 					break
 				}
 			}

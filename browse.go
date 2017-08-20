@@ -31,8 +31,8 @@
 package sonos
 
 import (
-	"github.com/ianr0bkny/go-sonos/model"
-	"github.com/ianr0bkny/go-sonos/upnp"
+	"github.com/atinm/go-sonos/model"
+	"github.com/atinm/go-sonos/upnp"
 	"log"
 	"strings"
 )
@@ -219,7 +219,7 @@ func (this *Sonos) GetGenreArtists(genre string) ([]model.Object, error) {
 		SortCriteria:  upnp.BrowseSortCriteria_None,
 	}
 	if result, err := this.Browse(req); nil != err {
-		log.Printf("Could not browse artists for genre `%s': %v", genre, err)
+		log.Printf("[DEBUG] Could not browse artists for genre `%s': %v", genre, err)
 		return nil, err
 	} else {
 		return model.ObjectStream(result.Doc), nil
@@ -307,9 +307,9 @@ func (this *Sonos) GetAlbumTracks(album string) ([]model.Object, error) {
 		RequestCount:  0,
 		SortCriteria:  upnp.BrowseSortCriteria_None,
 	}
-	log.Printf("Browsing tracks for album `%s'", album)
+	log.Printf("[DEBUG] Browsing tracks for album `%s'", album)
 	if result, err := this.Browse(req); nil != err {
-		log.Printf("Could not browse tracks for album `%s': %v", album, err)
+		log.Printf("[DEBUG] Could not browse tracks for album `%s': %v", album, err)
 		return nil, err
 	} else {
 		return model.ObjectStream(result.Doc), nil
